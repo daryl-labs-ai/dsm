@@ -44,8 +44,11 @@ class DSMConfig:
         ttl_config_path: Optional[Path] = None,
         index_dir: Optional[Path] = None,
         shard_catalog_path: Optional[Path] = None,
+<<<<<<< HEAD
+=======
         heads_manifest_path: Optional[Path] = None,
         event_log_path: Optional[Path] = None,
+>>>>>>> origin/main
     ):
         if base_dir is not None:
             self.base_dir = Path(base_dir).resolve()
