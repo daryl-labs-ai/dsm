@@ -73,6 +73,7 @@ class DSMKernel:
         """Verify single shard against manifest entry."""
         return self._integrity.verify_shard(shard_id)
 
+>>>>>>> origin/main
     def get_shard(self, shard_id: str) -> "MemoryShard":
         """Return MemoryShard for shard_id. Raises if not found."""
         shard = self._router.get_shard_by_id(shard_id)
