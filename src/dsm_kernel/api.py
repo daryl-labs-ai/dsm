@@ -4,9 +4,11 @@
 DSM kernel API facade. Append-only events, query modes, no change to legacy behavior.
 """
 
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.shard_catalog import ShardCatalog
 
 if TYPE_CHECKING:
     from dsm_kernel.shard_manager import MemoryShard
@@ -34,10 +36,25 @@ class DSMKernel:
         self._validator = validator
         self._rr = rr
         self._cache = cache
+        self._catalog = ShardCatalog(config)
 
     def list_shards(self) -> List[Dict[str, Any]]:
-        """List shards as list of status dicts."""
+        """List shards: prefer catalog if exists, else build+save then return. Stable keys."""
+        loaded = self._catalog.load()
+        if loaded:
+            return list(loaded.values())
+        entries = self._catalog.build(recompute_hash=False)
+        if entries:
+            self._catalog.save(entries)
+            return [asdict(e) for e in entries.values()]
         return self._router.get_all_shards_status()
+
+    def rebuild_catalog(self, recompute_hash: bool = False) -> List[Dict[str, Any]]:
+        """Rebuild catalog from disk, save, return list of entry dicts."""
+        entries = self._catalog.build(recompute_hash=recompute_hash)
+        if entries:
+            self._catalog.save(entries)
+        return [asdict(e) for e in entries.values()]
 
     def get_shard(self, shard_id: str) -> "MemoryShard":
         """Return MemoryShard for shard_id. Raises if not found."""

@@ -12,6 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsm_modules.dsm_router.router import ShardRouter
+from dsm_kernel.config import DSMConfig
+from dsm_kernel.shard_catalog import ShardCatalog
 
 
 def cmd_add(args):
@@ -135,6 +137,17 @@ def cmd_status(args):
     print(f"\n📊 Total: {summary['total_shards']} shards, {summary['total_transactions']} transactions")
 
 
+def cmd_catalog_rebuild(args):
+    recompute_hash = "--hash" in args or "-h" in args
+    config = DSMConfig()
+    catalog = ShardCatalog(config)
+    entries = catalog.build(recompute_hash=recompute_hash)
+    if entries:
+        catalog.save(entries)
+    path = config.shard_catalog_path
+    print(f"📂 Catalog: {len(entries)} entries -> {path}")
+
+
 def cmd_help(args):
     print("=== DARYL Sharding Memory CLI v2.0 ===")
     print()
@@ -145,6 +158,7 @@ def cmd_help(args):
     print("  query \"<query>\"    Rechercher des mémoires")
     print("  search <shard> \"<query>\"  Rechercher dans un shard")
     print("  status             Afficher le statut des shards")
+    print("  catalog rebuild [--hash]  Reconstruire l'index catalogue shards")
     print("  help               Afficher cette aide")
     print()
     print("Exemples:")
@@ -158,16 +172,22 @@ def main():
         cmd_help([])
         return
     command = sys.argv[1].lower()
+    rest = sys.argv[2:]
     if command == "add":
-        cmd_add(sys.argv[2:])
+        cmd_add(rest)
     elif command == "query":
-        cmd_query(sys.argv[2:])
+        cmd_query(rest)
     elif command == "search":
-        cmd_search(sys.argv[2:])
+        cmd_search(rest)
     elif command == "status":
-        cmd_status(sys.argv[2:])
+        cmd_status(rest)
+    elif command == "catalog":
+        if rest and rest[0].lower() == "rebuild":
+            cmd_catalog_rebuild(rest[1:])
+        else:
+            print("Usage: daryl-memory catalog rebuild [--hash]")
     elif command == "help":
-        cmd_help(sys.argv[2:])
+        cmd_help(rest)
     else:
         print(f"❌ Commande inconnue: {command}")
         print("Utilisez 'daryl-memory help' pour voir les commandes disponibles")
