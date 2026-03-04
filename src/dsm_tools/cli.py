@@ -5,6 +5,7 @@ CLI pour le Système de Sharding de Mémoire DARYL v2.0
 Migrated from cli/daryl_memory_cli.py (buralux/dsm).
 """
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -12,6 +13,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsm_modules.dsm_router.router import ShardRouter
+from dsm_kernel.config import DSMConfig
+from dsm_kernel.event_log import EventLogger
+from dsm_kernel.integrity import IntegrityManager
+from dsm_kernel.shard_catalog import ShardCatalog
 
 
 def cmd_add(args):
@@ -135,6 +140,83 @@ def cmd_status(args):
     print(f"\n📊 Total: {summary['total_shards']} shards, {summary['total_transactions']} transactions")
 
 
+def cmd_catalog_rebuild(args):
+    recompute_hash = "--hash" in args or "-h" in args
+    config = DSMConfig()
+    catalog = ShardCatalog(config)
+    entries = catalog.build(recompute_hash=recompute_hash)
+    if entries:
+        catalog.save(entries)
+    path = config.shard_catalog_path
+    print(f"📂 Catalog: {len(entries)} entries -> {path}")
+
+
+def cmd_integrity_rebuild(args):
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    manifest = mgr.rebuild()
+    path = config.heads_manifest_path
+    print(f"📂 Integrity manifest: {len(manifest)} shards -> {path}")
+
+
+def cmd_integrity_verify(args):
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    report = mgr.verify()
+    if report["ok"]:
+        print(f"✅ Integrity OK ({report['checked']} shards checked)")
+        return 0
+    print("❌ Integrity check failed")
+    if report.get("missing"):
+        print(f"  Missing: {report['missing']}")
+    if report.get("extra"):
+        print(f"  Extra: {report['extra']}")
+    if report.get("changed"):
+        for c in report["changed"]:
+            print(f"  Changed: {c['shard_id']}")
+    if report.get("reason") == "missing_manifest":
+        print("  Reason: no manifest (run 'integrity rebuild' first)")
+    return 1
+
+
+def cmd_integrity_verify_shard(args):
+    if not args:
+        print("Usage: daryl-memory integrity verify-shard <shard_id>")
+        return 1
+    shard_id = args[0]
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    report = mgr.verify_shard(shard_id)
+    if report["ok"]:
+        print(f"✅ Shard {shard_id}: OK")
+        return 0
+    print(f"❌ Shard {shard_id}: {report.get('reason', 'fail')}")
+    return 1
+
+
+def cmd_events_tail(args):
+    n = 20
+    i = 0
+    while i < len(args):
+        if args[i] == "--n" and i + 1 < len(args):
+            n = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+    config = DSMConfig()
+    logger = EventLogger(config)
+    events = logger.read_events(limit=n)
+    for e in events:
+        print(e)
+
+
+def cmd_events_count(args):
+    config = DSMConfig()
+    logger = EventLogger(config)
+    events = logger.read_events(limit=None)
+    print(len(events))
+
+
 def cmd_help(args):
     print("=== DARYL Sharding Memory CLI v2.0 ===")
     print()
@@ -145,6 +227,13 @@ def cmd_help(args):
     print("  query \"<query>\"    Rechercher des mémoires")
     print("  search <shard> \"<query>\"  Rechercher dans un shard")
     print("  status             Afficher le statut des shards")
+    print("  catalog rebuild [--hash]  Reconstruire l'index catalogue shards")
+    print("  integrity rebuild        Reconstruire le manifest d'intégrité (sha256)")
+    print("  integrity verify         Vérifier les shards contre le manifest")
+    print("  integrity verify-shard <id>  Vérifier un shard")
+    print("  events tail [--n 20]         Afficher les derniers événements")
+    print("  events count                  Nombre d'événements dans le log")
+    print("  benchmark report              Rapport A/B DSM vs normal memory")
     print("  help               Afficher cette aide")
     print()
     print("Exemples:")
@@ -158,16 +247,49 @@ def main():
         cmd_help([])
         return
     command = sys.argv[1].lower()
+    rest = sys.argv[2:]
     if command == "add":
-        cmd_add(sys.argv[2:])
+        cmd_add(rest)
     elif command == "query":
-        cmd_query(sys.argv[2:])
+        cmd_query(rest)
     elif command == "search":
-        cmd_search(sys.argv[2:])
+        cmd_search(rest)
     elif command == "status":
-        cmd_status(sys.argv[2:])
+        cmd_status(rest)
+    elif command == "catalog":
+        if rest and rest[0].lower() == "rebuild":
+            cmd_catalog_rebuild(rest[1:])
+        else:
+            print("Usage: daryl-memory catalog rebuild [--hash]")
+    elif command == "integrity":
+        if not rest:
+            print("Usage: daryl-memory integrity rebuild | verify | verify-shard <shard_id>")
+        elif rest[0].lower() == "rebuild":
+            cmd_integrity_rebuild(rest[1:])
+        elif rest[0].lower() == "verify":
+            exit(cmd_integrity_verify(rest[1:]))
+        elif rest[0].lower() == "verify-shard":
+            exit(cmd_integrity_verify_shard(rest[1:]))
+        else:
+            print("Usage: daryl-memory integrity rebuild | verify | verify-shard <shard_id>")
+    elif command == "events":
+        if not rest:
+            print("Usage: daryl-memory events tail [--n 20] | count")
+        elif rest[0].lower() == "tail":
+            cmd_events_tail(rest[1:])
+        elif rest[0].lower() == "count":
+            cmd_events_count(rest[1:])
+        else:
+            print("Usage: daryl-memory events tail [--n 20] | count")
+    elif command == "benchmark":
+        if rest and rest[0].lower() == "report":
+            repo = Path(__file__).resolve().parent.parent.parent
+            script = repo / "scripts" / "ab_report.py"
+            subprocess.run([sys.executable, str(script)], cwd=str(repo))
+        else:
+            print("Usage: daryl-memory benchmark report")
     elif command == "help":
-        cmd_help(sys.argv[2:])
+        cmd_help(rest)
     else:
         print(f"❌ Commande inconnue: {command}")
         print("Utilisez 'daryl-memory help' pour voir les commandes disponibles")
