@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsm_modules.dsm_router.router import ShardRouter
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.integrity import IntegrityManager
 from dsm_kernel.shard_catalog import ShardCatalog
 
 
@@ -148,6 +149,49 @@ def cmd_catalog_rebuild(args):
     print(f"📂 Catalog: {len(entries)} entries -> {path}")
 
 
+def cmd_integrity_rebuild(args):
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    manifest = mgr.rebuild()
+    path = config.heads_manifest_path
+    print(f"📂 Integrity manifest: {len(manifest)} shards -> {path}")
+
+
+def cmd_integrity_verify(args):
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    report = mgr.verify()
+    if report["ok"]:
+        print(f"✅ Integrity OK ({report['checked']} shards checked)")
+        return 0
+    print("❌ Integrity check failed")
+    if report.get("missing"):
+        print(f"  Missing: {report['missing']}")
+    if report.get("extra"):
+        print(f"  Extra: {report['extra']}")
+    if report.get("changed"):
+        for c in report["changed"]:
+            print(f"  Changed: {c['shard_id']}")
+    if report.get("reason") == "missing_manifest":
+        print("  Reason: no manifest (run 'integrity rebuild' first)")
+    return 1
+
+
+def cmd_integrity_verify_shard(args):
+    if not args:
+        print("Usage: daryl-memory integrity verify-shard <shard_id>")
+        return 1
+    shard_id = args[0]
+    config = DSMConfig()
+    mgr = IntegrityManager(config)
+    report = mgr.verify_shard(shard_id)
+    if report["ok"]:
+        print(f"✅ Shard {shard_id}: OK")
+        return 0
+    print(f"❌ Shard {shard_id}: {report.get('reason', 'fail')}")
+    return 1
+
+
 def cmd_help(args):
     print("=== DARYL Sharding Memory CLI v2.0 ===")
     print()
@@ -159,6 +203,9 @@ def cmd_help(args):
     print("  search <shard> \"<query>\"  Rechercher dans un shard")
     print("  status             Afficher le statut des shards")
     print("  catalog rebuild [--hash]  Reconstruire l'index catalogue shards")
+    print("  integrity rebuild        Reconstruire le manifest d'intégrité (sha256)")
+    print("  integrity verify         Vérifier les shards contre le manifest")
+    print("  integrity verify-shard <id>  Vérifier un shard")
     print("  help               Afficher cette aide")
     print()
     print("Exemples:")
@@ -186,6 +233,17 @@ def main():
             cmd_catalog_rebuild(rest[1:])
         else:
             print("Usage: daryl-memory catalog rebuild [--hash]")
+    elif command == "integrity":
+        if not rest:
+            print("Usage: daryl-memory integrity rebuild | verify | verify-shard <shard_id>")
+        elif rest[0].lower() == "rebuild":
+            cmd_integrity_rebuild(rest[1:])
+        elif rest[0].lower() == "verify":
+            exit(cmd_integrity_verify(rest[1:]))
+        elif rest[0].lower() == "verify-shard":
+            exit(cmd_integrity_verify_shard(rest[1:]))
+        else:
+            print("Usage: daryl-memory integrity rebuild | verify | verify-shard <shard_id>")
     elif command == "help":
         cmd_help(rest)
     else:

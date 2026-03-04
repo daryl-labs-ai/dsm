@@ -8,6 +8,7 @@ from dataclasses import asdict
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.integrity import IntegrityManager
 from dsm_kernel.shard_catalog import ShardCatalog
 
 if TYPE_CHECKING:
@@ -37,6 +38,7 @@ class DSMKernel:
         self._rr = rr
         self._cache = cache
         self._catalog = ShardCatalog(config)
+        self._integrity = IntegrityManager(config)
 
     def list_shards(self) -> List[Dict[str, Any]]:
         """List shards: prefer catalog if exists, else build+save then return. Stable keys."""
@@ -55,6 +57,18 @@ class DSMKernel:
         if entries:
             self._catalog.save(entries)
         return [asdict(e) for e in entries.values()]
+
+    def rebuild_integrity_manifest(self) -> Dict[str, Any]:
+        """Rebuild sha256 manifest from disk, save atomically, return manifest."""
+        return self._integrity.rebuild()
+
+    def verify_integrity(self) -> Dict[str, Any]:
+        """Verify shard files against manifest. Returns report with ok, missing, extra, changed."""
+        return self._integrity.verify()
+
+    def verify_shard_integrity(self, shard_id: str) -> Dict[str, Any]:
+        """Verify single shard against manifest entry."""
+        return self._integrity.verify_shard(shard_id)
 
     def get_shard(self, shard_id: str) -> "MemoryShard":
         """Return MemoryShard for shard_id. Raises if not found."""
