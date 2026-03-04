@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>DARYL • Sharding Memory</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="bg-blob"></div>
+  <div class="grain"></div>
+  <header>
+    <h1 class="hero-gradient">DARYL <span class="logo-dot"></span> Sharding Memory</h1>
+    <nav>
+      <a class="nav-link" href="/docs">Docs</a>
+      <a class="nav-link" href="/stats">Stats API</a>
+      <a class="nav-link" href="/shards">Shards API</a>
+    </nav>
+  </header>
+  <main>
+    <p>Memory Intelligence for Agent Infrastructure</p>
+    <p>Recherche sémantique, recherche hybride, compression, et TTL cleanup — sur toutes les shards.</p>
+    <input type="text" id="q" class="input" placeholder="Recherche…">
+    <input type="text" id="top_k" class="mini" placeholder="top_k" value="5">
+    <input type="text" id="min_score" class="mini" placeholder="min_score" value="0.0">
+    <button class="btn-primary" onclick="doSearch('search')">Semantic</button>
+    <button class="btn-secondary" onclick="doSearch('hybrid')">Hybrid</button>
+    <button class="btn-secondary" onclick="loadStats()">Stats</button>
+    <button class="btn-secondary" onclick="loadShards()">Shards</button>
+    <button class="btn-secondary" onclick="compressMemory()">Compress</button>
+    <button class="btn-secondary" onclick="cleanupMemory()">TTL Cleanup</button>
+    <div id="status">ready</div>
+    <div id="results-cards"></div>
+    <pre id="out" class="code">{}</pre>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

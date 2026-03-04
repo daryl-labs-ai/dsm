@@ -1,0 +1,37 @@
+/* DARYL Web UI - minimal (migrated from buralux/dsm) */
+:root {
+  --bg0: #05060A;
+  --bg1: #0B1020;
+  --glass: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.10);
+  --text: rgba(230,232,255,0.92);
+  --p1: #7C3AED;
+  --p2: #22D3EE;
+  --p3: #6366F1;
+}
+body {
+  background: linear-gradient(180deg, var(--bg0), var(--bg1));
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  padding: 1rem;
+}
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+.hero-gradient { background: linear-gradient(90deg, var(--p1), var(--p3), var(--p2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo-dot { display: inline-block; width: 12px; height: 12px; border-radius: 999px; background: linear-gradient(180deg, var(--p1), var(--p2)); vertical-align: middle; margin-left: 4px; }
+.input { width: 100%; max-width: 400px; padding: 12px; border-radius: 14px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); color: var(--text); margin: 8px 4px 8px 0; }
+.mini { width: 70px; padding: 6px 8px; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); color: var(--text); font-size: 12px; margin: 0 4px; }
+.btn-primary, .btn-secondary { padding: 12px 14px; border-radius: 14px; font-weight: 600; border: 1px solid var(--border); margin: 4px; cursor: pointer; }
+.btn-primary { background: linear-gradient(90deg, var(--p1), var(--p3)); color: #fff; }
+.btn-secondary { background: rgba(255,255,255,0.06); color: var(--text); }
+.code { height: 420px; overflow: auto; padding: 12px; border-radius: 14px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); font-size: 12px; white-space: pre-wrap; }
+.text-sm { font-size: 12px; opacity: 0.85; }
+.p-4 { padding: 1rem; }
+#status { margin: 8px 0; font-size: 13px; }
+.bg-blob, .grain { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.nav-link { font-size: 13px; color: rgba(255,255,255,0.65); padding: 8px 10px; border-radius: 999px; margin-right: 8px; text-decoration: none; border: 1px solid rgba(255,255,255,0.08); }
