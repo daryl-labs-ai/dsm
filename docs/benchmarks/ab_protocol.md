@@ -30,7 +30,7 @@ record_ab_run(
 )
 ```
 
-This appends a transaction to the DSM shard **technical** with `content` = JSON of the `ab_run` payload. The technical shard must exist (e.g. `shard_technical` or `technical` depending on your setup).
+This appends a transaction to the DSM shard **shard_technical** with `content` = JSON of the `ab_run` payload. The shard must exist (file `shard_technical.json` in your shards directory).
 
 ## How to generate the report
 
@@ -46,7 +46,7 @@ Or via the CLI:
 daryl-memory benchmark report
 ```
 
-The report loads the DSM kernel, reads all transactions from the **technical** shard, keeps only those with `type == "ab_run"`, then computes by `memory_mode`:
+The report loads the DSM kernel, reads all transactions from the **shard_technical** shard, keeps only those with `type == "ab_run"`, then computes by `memory_mode`:
 
 - **success rate** (percentage of runs with `success == true`)
 - **avg time** (average of `time_min`)

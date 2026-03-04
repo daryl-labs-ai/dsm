@@ -48,3 +48,21 @@ Ensure the **insights** shard exists (e.g. `data/shards/insights.json` or a shar
 - The **loop** runs separately (same or another process). It only reads the event log and, for each new append event, can run side effects (e.g. writing an insight, triggering pipelines). Agents do not call the loop; the loop reacts to events.
 
 - To add new rules: extend `LoopOrchestrator.process_event` (e.g. other `action` values or filters) and optionally other shards or external systems.
+
+## How the watcher reads event_log.jsonl
+
+The watcher opens `config.event_log_path` (default `data/index/event_log.jsonl`), seeks to `last_offset` (byte position), and reads new lines. Each line is parsed as JSON and yielded with the new offset. The runner updates `last_offset` after each event so the next poll only reads new data.
+
+## What the orchestrator writes
+
+For each event with `action == "append"`, the orchestrator appends one transaction to the DSM shard **insights**: a short text like `Loop: memory_append_detected on shard <id>, payload_size <n>`, with `source: "loop"` and `importance: 0.6`. The shard id is `insights` (file `insights.json` or equivalent depending on your router).
+
+## How to run and stop safely
+
+- **Run**: From repo root, `python scripts/run_loop.py`. It runs until interrupted. Set `DSM_BASE_DIR` if your data is elsewhere.
+- **Stop**: Send SIGINT (Ctrl+C). The process exits; no checkpoint is written. On next start, the watcher will re-read from offset 0 (or implement persistence of `last_offset` yourself).
+
+## Limitations
+
+- **Polling** — The loop sleeps 2 seconds between polls; it does not use file notifications.
+- **last_offset persistence** — The runner keeps `last_offset` in memory only. After a restart, it starts from 0, so events may be processed more than once. Idempotent side effects (e.g. appending an insight) are safe; for strict once-only processing, persist `last_offset` (e.g. to a file) and load it on start.
