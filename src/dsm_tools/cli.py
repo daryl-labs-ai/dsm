@@ -5,6 +5,7 @@ CLI pour le Système de Sharding de Mémoire DARYL v2.0
 Migrated from cli/daryl_memory_cli.py (buralux/dsm).
 """
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -232,6 +233,7 @@ def cmd_help(args):
     print("  integrity verify-shard <id>  Vérifier un shard")
     print("  events tail [--n 20]         Afficher les derniers événements")
     print("  events count                  Nombre d'événements dans le log")
+    print("  benchmark report              Rapport A/B DSM vs normal memory")
     print("  help               Afficher cette aide")
     print()
     print("Exemples:")
@@ -279,6 +281,13 @@ def main():
             cmd_events_count(rest[1:])
         else:
             print("Usage: daryl-memory events tail [--n 20] | count")
+    elif command == "benchmark":
+        if rest and rest[0].lower() == "report":
+            repo = Path(__file__).resolve().parent.parent.parent
+            script = repo / "scripts" / "ab_report.py"
+            subprocess.run([sys.executable, str(script)], cwd=str(repo))
+        else:
+            print("Usage: daryl-memory benchmark report")
     elif command == "help":
         cmd_help(rest)
     else:
