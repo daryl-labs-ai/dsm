@@ -1,0 +1,22 @@
+{
+  "shard_projects": {
+    "ttl_days": 30,
+    "max_transactions": 100
+  },
+  "shard_insights": {
+    "ttl_days": 90,
+    "max_transactions": 50
+  },
+  "shard_people": {
+    "ttl_days": 90,
+    "max_transactions": 50
+  },
+  "shard_technical": {
+    "ttl_days": 180,
+    "max_transactions": 200
+  },
+  "shard_strategy": {
+    "ttl_days": 180,
+    "max_transactions": 200
+  }
+}
