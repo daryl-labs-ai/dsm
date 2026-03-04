@@ -4,9 +4,14 @@
 DSM kernel API facade. Append-only events, query modes, no change to legacy behavior.
 """
 
+import json
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.event_log import EventLogger
+from dsm_kernel.integrity import IntegrityManager
+from dsm_kernel.shard_catalog import ShardCatalog
 
 if TYPE_CHECKING:
     from dsm_kernel.shard_manager import MemoryShard
@@ -34,11 +39,41 @@ class DSMKernel:
         self._validator = validator
         self._rr = rr
         self._cache = cache
+        self._catalog = ShardCatalog(config)
+        self._integrity = IntegrityManager(config)
+        self._event_logger = EventLogger(config)
 
     def list_shards(self) -> List[Dict[str, Any]]:
-        """List shards as list of status dicts."""
+        """List shards: prefer catalog if exists, else build+save then return. Stable keys."""
+        loaded = self._catalog.load()
+        if loaded:
+            return list(loaded.values())
+        entries = self._catalog.build(recompute_hash=False)
+        if entries:
+            self._catalog.save(entries)
+            return [asdict(e) for e in entries.values()]
         return self._router.get_all_shards_status()
 
+    def rebuild_catalog(self, recompute_hash: bool = False) -> List[Dict[str, Any]]:
+        """Rebuild catalog from disk, save, return list of entry dicts."""
+        entries = self._catalog.build(recompute_hash=recompute_hash)
+        if entries:
+            self._catalog.save(entries)
+        return [asdict(e) for e in entries.values()]
+
+    def rebuild_integrity_manifest(self) -> Dict[str, Any]:
+        """Rebuild sha256 manifest from disk, save atomically, return manifest."""
+        return self._integrity.rebuild()
+
+    def verify_integrity(self) -> Dict[str, Any]:
+        """Verify shard files against manifest. Returns report with ok, missing, extra, changed."""
+        return self._integrity.verify()
+
+    def verify_shard_integrity(self, shard_id: str) -> Dict[str, Any]:
+        """Verify single shard against manifest entry."""
+        return self._integrity.verify_shard(shard_id)
+
+>>>>>>> origin/main
     def get_shard(self, shard_id: str) -> "MemoryShard":
         """Return MemoryShard for shard_id. Raises if not found."""
         shard = self._router.get_shard_by_id(shard_id)
@@ -76,6 +111,12 @@ class DSMKernel:
             importance=importance,
             cross_refs=cross_refs or None,
         )
+        self._event_logger.append_event({
+            "session_id": "unknown",
+            "shard_id": shard_id,
+            "action": "append",
+            "payload_size": len(json.dumps(payload)),
+        })
         return {"id": tx_id, "shard_id": shard_id}
 
     def query(
