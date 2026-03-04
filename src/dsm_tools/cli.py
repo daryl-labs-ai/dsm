@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dsm_modules.dsm_router.router import ShardRouter
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.event_log import EventLogger
 from dsm_kernel.integrity import IntegrityManager
 from dsm_kernel.shard_catalog import ShardCatalog
 
@@ -192,6 +193,29 @@ def cmd_integrity_verify_shard(args):
     return 1
 
 
+def cmd_events_tail(args):
+    n = 20
+    i = 0
+    while i < len(args):
+        if args[i] == "--n" and i + 1 < len(args):
+            n = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+    config = DSMConfig()
+    logger = EventLogger(config)
+    events = logger.read_events(limit=n)
+    for e in events:
+        print(e)
+
+
+def cmd_events_count(args):
+    config = DSMConfig()
+    logger = EventLogger(config)
+    events = logger.read_events(limit=None)
+    print(len(events))
+
+
 def cmd_help(args):
     print("=== DARYL Sharding Memory CLI v2.0 ===")
     print()
@@ -206,6 +230,8 @@ def cmd_help(args):
     print("  integrity rebuild        Reconstruire le manifest d'intégrité (sha256)")
     print("  integrity verify         Vérifier les shards contre le manifest")
     print("  integrity verify-shard <id>  Vérifier un shard")
+    print("  events tail [--n 20]         Afficher les derniers événements")
+    print("  events count                  Nombre d'événements dans le log")
     print("  help               Afficher cette aide")
     print()
     print("Exemples:")
@@ -244,6 +270,15 @@ def main():
             exit(cmd_integrity_verify_shard(rest[1:]))
         else:
             print("Usage: daryl-memory integrity rebuild | verify | verify-shard <shard_id>")
+    elif command == "events":
+        if not rest:
+            print("Usage: daryl-memory events tail [--n 20] | count")
+        elif rest[0].lower() == "tail":
+            cmd_events_tail(rest[1:])
+        elif rest[0].lower() == "count":
+            cmd_events_count(rest[1:])
+        else:
+            print("Usage: daryl-memory events tail [--n 20] | count")
     elif command == "help":
         cmd_help(rest)
     else:
