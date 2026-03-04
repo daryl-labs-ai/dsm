@@ -1,5 +1,13 @@
 # dsm
 
+## Development
+
+Run tests locally with:
+
+```bash
+PYTHONPATH=src pytest -q
+```
+
 ## Governance
 
 DSM is an open-source project maintained by **Daryl Labs**.
