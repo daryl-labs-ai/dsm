@@ -30,4 +30,24 @@ Each run must record one event in the DSM shard **technical** with the following
 
 These events are used to compute **success rate**, **average time**, and **average rework** per `memory_mode`, and to compare DSM vs normal memory performance.
 
+Events are stored in the **shard_technical** shard (file `shard_technical.json`); the report script reads that shard and filters transactions whose `content` is JSON with `type == "ab_run"`.
+
 See [ab_protocol.md](ab_protocol.md) for how to run tasks, how agents should record runs, and how to generate the report.
+
+### Example report output
+
+```
+DSM vs normal memory
+
+success rate
+  normal : 50%
+  dsm    : 80%
+
+avg time
+  normal : 12.5 min
+  dsm    : 10.2 min
+
+avg rework
+  normal : 2.0
+  dsm    : 1.2
+```
