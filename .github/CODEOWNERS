@@ -1,5 +1,5 @@
-# Replace @daryl-labs-ai with your org or username when known.
-# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# Code owners for DSM. See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-src/dsm_kernel/ @daryl-labs-ai
-docs/          @daryl-labs-ai
+src/dsm_kernel/   @daryl-labs-ai
+docs/             @daryl-labs-ai
+src/dsm_modules/  @daryl-labs-ai

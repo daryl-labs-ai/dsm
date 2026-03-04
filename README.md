@@ -139,6 +139,27 @@ CLI is invoked as `python src/dsm_tools/cli.py <command>`. See [docs/benchmarks/
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for branching, PR size, tests, and kernel rules.
 
+## Development
+
+Run tests locally with:
+
+```bash
+PYTHONPATH=src pytest -q
+```
+
+## Governance
+
+DSM is an open-source project maintained by **Daryl Labs**.
+
+**Founder & CEO:** Mohamed Azizi
+
+DSM follows a **kernel-first architecture**:
+
+- Kernel is minimal and stable
+- Modules evolve independently
+
+For governance, security, and trademark policy, see [GOVERNANCE.md](GOVERNANCE.md), [SECURITY.md](SECURITY.md), and [TRADEMARKS.md](TRADEMARKS.md).
+
 ## Roadmap
 
 - **Done**: PR1 (import legacy), PR2 (kernel API + config), PR3 (shard catalog), PR4 (integrity manifest), PR5 (event log), PR6 (loop engine), PR7 (A/B benchmark).
