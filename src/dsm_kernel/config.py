@@ -31,6 +31,7 @@ TTL_CONFIG_PATH: Path = DSM_BASE_DIR / "config" / "ttl_config.json"
 INDEX_DIR: Path = DSM_BASE_DIR / "data" / "index"
 SHARD_CATALOG_PATH: Path = INDEX_DIR / "shard_catalog.json"
 HEADS_MANIFEST_PATH: Path = INDEX_DIR / "heads_manifest.json"
+EVENT_LOG_PATH: Path = INDEX_DIR / "event_log.jsonl"
 
 
 class DSMConfig:
@@ -44,6 +45,7 @@ class DSMConfig:
         index_dir: Optional[Path] = None,
         shard_catalog_path: Optional[Path] = None,
         heads_manifest_path: Optional[Path] = None,
+        event_log_path: Optional[Path] = None,
     ):
         if base_dir is not None:
             self.base_dir = Path(base_dir).resolve()
@@ -54,3 +56,4 @@ class DSMConfig:
         self.index_dir: Path = Path(index_dir).resolve() if index_dir is not None else (self.base_dir / "data" / "index")
         self.shard_catalog_path: Path = Path(shard_catalog_path).resolve() if shard_catalog_path is not None else (self.index_dir / "shard_catalog.json")
         self.heads_manifest_path: Path = Path(heads_manifest_path).resolve() if heads_manifest_path is not None else (self.index_dir / "heads_manifest.json")
+        self.event_log_path: Path = Path(event_log_path).resolve() if event_log_path is not None else (self.index_dir / "event_log.jsonl")

@@ -4,10 +4,12 @@
 DSM kernel API facade. Append-only events, query modes, no change to legacy behavior.
 """
 
+import json
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from dsm_kernel.config import DSMConfig
+from dsm_kernel.event_log import EventLogger
 from dsm_kernel.integrity import IntegrityManager
 from dsm_kernel.shard_catalog import ShardCatalog
 
@@ -39,6 +41,7 @@ class DSMKernel:
         self._cache = cache
         self._catalog = ShardCatalog(config)
         self._integrity = IntegrityManager(config)
+        self._event_logger = EventLogger(config)
 
     def list_shards(self) -> List[Dict[str, Any]]:
         """List shards: prefer catalog if exists, else build+save then return. Stable keys."""
@@ -107,6 +110,12 @@ class DSMKernel:
             importance=importance,
             cross_refs=cross_refs or None,
         )
+        self._event_logger.append_event({
+            "session_id": "unknown",
+            "shard_id": shard_id,
+            "action": "append",
+            "payload_size": len(json.dumps(payload)),
+        })
         return {"id": tx_id, "shard_id": shard_id}
 
     def query(
